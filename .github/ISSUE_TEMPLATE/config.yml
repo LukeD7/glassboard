@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions or Discussions
+    url: https://github.com/YOUR_USERNAME/glassboard/discussions
+    about: Please use Discussions for questions or general ideas

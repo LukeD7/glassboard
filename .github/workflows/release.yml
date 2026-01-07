@@ -1,0 +1,60 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: "5.9"
+
+      - name: Build and Package
+        # Builds the app and creates a zip.
+        # Uses ad-hoc signing (SIGNING_ID=-) by default if no secrets are provided.
+        run: |
+          make package
+      
+      # Optional: Steps for Real Signing/Notarization would go here
+      # You would inject secrets.SIGNING_CERTIFICATE and run `make release`
+      
+      - name: Calculate Checksum
+        id: checksum
+        run: |
+          echo "SHA256=$(shasum -a 256 Glassboard.zip | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "Checksum calculated."
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Glassboard.zip
+          body: |
+            ## Glassboard v${{ github.ref_name }}
+            
+            ### Installation (Homebrew)
+            ```bash
+            brew tap lukedust/tap
+            brew install --cask glassboard
+            ```
+            
+            ### Manual Installation
+            1. Download **Glassboard.zip** below.
+            2. Unzip and drag `Glassboard.app` to your Applications folder.
+            3. *Note: Since this is an open-source build, you may need to Right-Click > Open the first time to bypass Gatekeeper.*
+            
+            ### SHASUM (For Homebrew)
+            `${{ steps.checksum.outputs.SHA256 }}`
+          draft: true
+          prerelease: false

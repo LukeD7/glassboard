@@ -1,4 +1,39 @@
+# Swift / Build
 .build/
 .swiftpm/
+Packages/
+Package.resolved
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+*.pbuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.users
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS System
 .DS_Store
-*.xcodeproj/
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# VS Code
+.vscode/
+
+# Project Artifacts
+Glassboard.app
+Glassboard.zip
+Glassboard.iconset
+AppIcon.icns
+*.o
+

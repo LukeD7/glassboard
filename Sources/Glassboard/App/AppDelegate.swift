@@ -91,6 +91,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
+        // Monetization / Support
+        let supportItem = NSMenuItem(title: "Buy me a Coffee ☕️", action: #selector(openSupportPage), keyEquivalent: "")
+        supportItem.target = self
+        menu.addItem(supportItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
         // Quit
         let quitItem = NSMenuItem(title: "Quit Glassboard", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
@@ -135,6 +142,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     
     @objc func quitApp() {
         NSApp.terminate(nil)
+    }
+    
+    @objc func openSupportPage() {
+        if let url = URL(string: "https://ko-fi.com/lukedust") {
+            NSWorkspace.shared.open(url)
+        }
     }
     
     private func setupPanel() {

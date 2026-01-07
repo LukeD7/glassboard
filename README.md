@@ -82,6 +82,50 @@ Breaking changes may occur before v1.0.
 
 ---
 
+## Installation
+
+### For End Users (Production)
+
+To install Glassboard as a standalone application:
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/lukedust/glassboard.git
+   cd glassboard
+   ```
+
+2. **Build & Install**
+   ```bash
+   make install
+   ```
+   This will compile the optimized release version and copy `Glassboard.app` to your `/Applications` folder.
+   
+   Once finished, you can launch **Glassboard** from Spotlight or your Applications folder. No terminal required.
+
+### For Developers
+
+**Prerequisites**
+- macOS 13.0+
+- Xcode 15.0+ (or Swift 5.9+ CLI)
+
+**Development Workflow**
+
+1. **Run from Terminal** (Quick iteration)
+   ```bash
+   swift run
+   ```
+
+2. **Open in Xcode** (Recommended for editing)
+   Double-click `Package.swift` to open the project.
+
+3. **Build .app Bundle**
+   ```bash
+   make app
+   ```
+   Creates `Glassboard.app` in the current directory for testing the release build behavior.
+
+---
+
 ## License
 
 MIT

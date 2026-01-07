@@ -1,5 +1,13 @@
 import AppKit
 
+// MARK: - Display Row Types
+
+enum DisplayRow {
+    case header(String)
+    case divider
+    case item(ClipboardItem)
+}
+
 class HistoryViewController: NSViewController {
     
     let searchField = NSTextField()
@@ -10,8 +18,8 @@ class HistoryViewController: NSViewController {
     private let emptyStateTitle = NSTextField(labelWithString: "")
     private let emptyStateSubtitle = NSTextField(labelWithString: "")
     
-    private var displayItems: [ClipboardItem] = []
-    private var pinnedCount: Int = 0
+    private var displayRows: [DisplayRow] = []
+    private var pinMenuItem: NSMenuItem?
     
     override func loadView() {
         self.view = NSView()
@@ -117,15 +125,17 @@ class HistoryViewController: NSViewController {
         tableView.action = #selector(onTableClick)
         tableView.doubleAction = #selector(onTableDoubleClick)
         tableView.target = self
-        tableView.intercellSpacing = NSSize(width: 0, height: 0)
-        tableView.rowHeight = 36
+        tableView.intercellSpacing = NSSize(width: 0, height: 2)
+        tableView.rowHeight = 72
         tableView.usesAlternatingRowBackgroundColors = false
         
         // Right-click menu
         let menu = NSMenu()
+        menu.delegate = self
         menu.addItem(NSMenuItem(title: "Paste", action: #selector(pasteSelected), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Pin", action: #selector(togglePinSelected), keyEquivalent: "p"))
+        pinMenuItem = NSMenuItem(title: "Pin", action: #selector(togglePinSelected), keyEquivalent: "p")
+        menu.addItem(pinMenuItem!)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Delete", action: #selector(deleteSelected), keyEquivalent: ""))
         tableView.menu = menu
@@ -222,32 +232,41 @@ class HistoryViewController: NSViewController {
     }
     
     func refreshData() {
-        let pinned = ClipboardManager.shared.pinnedItems
-        let all = ClipboardManager.shared.history
+        let allItems = ClipboardManager.shared.history
         let searchText = searchField.stringValue.lowercased()
         
         // Filter by search
-        let filteredPinned: [ClipboardItem]
-        let filteredHistory: [ClipboardItem]
+        let filtered: [ClipboardItem]
         
         if searchText.isEmpty {
-            filteredPinned = pinned
-            filteredHistory = all
+            filtered = allItems
         } else {
-            filteredPinned = pinned.filter { ($0.text ?? "").localizedCaseInsensitiveContains(searchText) }
-            filteredHistory = all.filter { ($0.text ?? "").localizedCaseInsensitiveContains(searchText) }
+            filtered = allItems.filter { ($0.text ?? "").localizedCaseInsensitiveContains(searchText) }
         }
         
-        // Combine: pinned first, then history
-        pinnedCount = filteredPinned.count
-        displayItems = filteredPinned + filteredHistory
+        // Build display rows with sections
+        let pinnedItems = filtered.filter { $0.isPinned }
+        let unpinnedItems = filtered.filter { !$0.isPinned }
+        
+        displayRows = []
+        
+        if !pinnedItems.isEmpty {
+            displayRows.append(.header("Pinned"))
+            displayRows.append(contentsOf: pinnedItems.map { .item($0) })
+            
+            if !unpinnedItems.isEmpty {
+                displayRows.append(.divider)
+            }
+        }
+        
+        displayRows.append(contentsOf: unpinnedItems.map { .item($0) })
         
         // Update empty state
-        let isEmpty = displayItems.isEmpty
+        let isEmpty = displayRows.isEmpty
         emptyStateContainer.isHidden = !isEmpty
         scrollView.isHidden = isEmpty
         
-        if pinned.isEmpty && all.isEmpty {
+        if allItems.isEmpty {
             emptyStateIcon.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: nil)
             emptyStateTitle.stringValue = "No clipboard history"
             emptyStateSubtitle.stringValue = "Copy something to get started"
@@ -259,20 +278,38 @@ class HistoryViewController: NSViewController {
         
         tableView.reloadData()
         
-        // Auto-select first row
-        if tableView.selectedRow == -1 && !displayItems.isEmpty {
-            tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+        // Auto-select first item row
+        if tableView.selectedRow == -1 {
+            if let firstItemIndex = displayRows.firstIndex(where: { if case .item = $0 { return true } else { return false } }) {
+                tableView.selectRowIndexes(IndexSet(integer: firstItemIndex), byExtendingSelection: false)
+            }
         }
+    }
+    
+    // MARK: - Helper
+    
+    private func item(at row: Int) -> ClipboardItem? {
+        guard row >= 0, row < displayRows.count else { return nil }
+        if case .item(let item) = displayRows[row] {
+            return item
+        }
+        return nil
     }
     
     // MARK: - Actions
     
     @objc private func onTableClick() {
-        // Single click just selects
+        // Single click pastes immediately - use clickedRow since selection may not be set yet
+        let row = tableView.clickedRow
+        guard let item = item(at: row) else { return }
+        pasteItem(item)
     }
     
     @objc private func onTableDoubleClick() {
-        confirmSelection()
+        // Double click also pastes
+        let row = tableView.clickedRow
+        guard let item = item(at: row) else { return }
+        pasteItem(item)
     }
     
     @objc private func pasteSelected() {
@@ -281,27 +318,30 @@ class HistoryViewController: NSViewController {
     
     @objc private func togglePinSelected() {
         let row = tableView.clickedRow >= 0 ? tableView.clickedRow : tableView.selectedRow
-        guard row >= 0, row < displayItems.count else { return }
-        ClipboardManager.shared.togglePin(displayItems[row])
+        guard let item = item(at: row) else { return }
+        ClipboardManager.shared.togglePin(item)
     }
     
     @objc private func deleteSelected() {
         let row = tableView.clickedRow >= 0 ? tableView.clickedRow : tableView.selectedRow
-        guard row >= 0, row < displayItems.count else { return }
-        ClipboardManager.shared.deleteItem(displayItems[row])
+        guard let item = item(at: row) else { return }
+        ClipboardManager.shared.deleteItem(item)
     }
     
     func confirmSelection() {
         let row = tableView.selectedRow
-        guard row >= 0, row < displayItems.count else { return }
-        let item = displayItems[row]
-        
+        guard let item = item(at: row) else { return }
+        pasteItem(item)
+    }
+    
+    private func pasteItem(_ item: ClipboardItem) {
+        // Copy to clipboard first
         ClipboardManager.shared.moveItemToTop(item)
         
         if let panel = view.window as? FloatingPanel {
-            panel.hideWithAnimation { [weak self] in
-                NSApp.hide(nil)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            panel.hideWithAnimation {
+                // Give time for the previous app to regain focus
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
                     self?.synthesizePaste()
                 }
             }
@@ -323,9 +363,30 @@ class HistoryViewController: NSViewController {
     }
     
     private func animateSelection(to row: Int) {
-        guard row >= 0, row < displayItems.count else { return }
-        tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-        tableView.scrollRowToVisible(row)
+        guard row >= 0, row < displayRows.count else { return }
+        // Only select if it's an item row
+        if case .item = displayRows[row] {
+            tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+            tableView.scrollRowToVisible(row)
+        }
+    }
+    
+    // MARK: - Keyboard Shortcuts
+    
+    override func keyDown(with event: NSEvent) {
+        // Handle ⌘P for pin/unpin
+        if event.modifierFlags.contains(.command) {
+            if let chars = event.charactersIgnoringModifiers?.lowercased(), chars == "p" {
+                togglePinSelected()
+                return
+            }
+            // ⌘ Backspace to delete
+            if event.keyCode == 51 { // Backspace key
+                deleteSelected()
+                return
+            }
+        }
+        super.keyDown(with: event)
     }
 }
 
@@ -336,17 +397,28 @@ extension HistoryViewController: NSTextFieldDelegate {
         refreshData()
     }
     
+    private func nextItemRow(from row: Int, direction: Int) -> Int? {
+        var next = row + direction
+        while next >= 0 && next < displayRows.count {
+            if case .item = displayRows[next] {
+                return next
+            }
+            next += direction
+        }
+        return nil
+    }
+    
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         if commandSelector == #selector(NSResponder.moveDown(_:)) {
             let row = tableView.selectedRow
-            if row < displayItems.count - 1 {
-                animateSelection(to: row + 1)
+            if let next = nextItemRow(from: row, direction: 1) {
+                animateSelection(to: next)
             }
             return true
         } else if commandSelector == #selector(NSResponder.moveUp(_:)) {
             let row = tableView.selectedRow
-            if row > 0 {
-                animateSelection(to: row - 1)
+            if let next = nextItemRow(from: row, direction: -1) {
+                animateSelection(to: next)
             }
             return true
         } else if commandSelector == #selector(NSResponder.insertNewline(_:)) {
@@ -368,31 +440,73 @@ extension HistoryViewController: NSTextFieldDelegate {
 
 extension HistoryViewController: NSTableViewDataSource, NSTableViewDelegate {
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return displayItems.count
+        return displayRows.count
     }
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        var cell = tableView.makeView(withIdentifier: HistoryCell.identifier, owner: self) as? HistoryCell
-        if cell == nil {
-            cell = HistoryCell()
-            cell?.identifier = HistoryCell.identifier
-        }
+        guard row < displayRows.count else { return nil }
         
-        // Pass both item and index for keyboard shortcut display
-        cell?.configure(with: displayItems[row])
-        return cell
+        switch displayRows[row] {
+        case .header(let title):
+            var cell = tableView.makeView(withIdentifier: SectionHeaderCell.identifier, owner: self) as? SectionHeaderCell
+            if cell == nil {
+                cell = SectionHeaderCell()
+                cell?.identifier = SectionHeaderCell.identifier
+            }
+            cell?.configure(title: title)
+            return cell
+            
+        case .divider:
+            var cell = tableView.makeView(withIdentifier: SectionDividerCell.identifier, owner: self) as? SectionDividerCell
+            if cell == nil {
+                cell = SectionDividerCell()
+                cell?.identifier = SectionDividerCell.identifier
+            }
+            return cell
+            
+        case .item(let item):
+            var cell = tableView.makeView(withIdentifier: HistoryCell.identifier, owner: self) as? HistoryCell
+            if cell == nil {
+                cell = HistoryCell()
+                cell?.identifier = HistoryCell.identifier
+            }
+            cell?.configure(with: item)
+            
+            // Wire up pin toggle callback
+            cell?.onPinToggle = { [weak self] item in
+                ClipboardManager.shared.togglePin(item)
+                self?.refreshData()
+            }
+            return cell
+        }
     }
     
     func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-        let item = displayItems[row]
-        return item.type == .image ? 72 : 36
+        guard row < displayRows.count else { return 0 }
+        
+        switch displayRows[row] {
+        case .header:
+            return 28
+        case .divider:
+            return 16
+        case .item(let item):
+            return item.type == .image ? 80 : 72
+        }
     }
     
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
         return CleanRowView()
     }
     
-    // Section headers for pinned items
+    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+        // Only allow selecting item rows
+        guard row < displayRows.count else { return false }
+        if case .item = displayRows[row] {
+            return true
+        }
+        return false
+    }
+    
     func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool {
         return false
     }
@@ -408,5 +522,17 @@ class CleanRowView: NSTableRowView {
     override var isEmphasized: Bool {
         get { true }
         set { }
+    }
+}
+
+// MARK: - NSMenuDelegate
+
+extension HistoryViewController: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        // Update pin menu item text based on clicked row
+        let row = tableView.clickedRow
+        if let item = item(at: row) {
+            pinMenuItem?.title = item.isPinned ? "Unpin" : "Pin"
+        }
     }
 }

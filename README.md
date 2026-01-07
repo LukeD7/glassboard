@@ -29,7 +29,12 @@ It is a simple, opinionated replacement for invisible clipboard behavior.
 - Screenshot-first visual list
 - Instant search by typing
 - Minimal pinning (small, capped)
-- Global hotkey: **⌘⇧V**
+- Global hotkey: **⌘⇧V** for clipboard history
+- **Screen Grab Tool**: **⌘⇧C** for quick screenshots
+  - Selection (draw area), Window, or Full Screen modes
+  - Remembers your last used capture mode
+  - Always copies directly to clipboard
+  - Right-click menu bar icon for manual mode selection
 - Menu bar access
 - Fully local storage
 

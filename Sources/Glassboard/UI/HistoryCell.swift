@@ -3,18 +3,26 @@ import AppKit
 class HistoryCell: NSTableCellView {
     static let identifier = NSUserInterfaceItemIdentifier("HistoryCell")
     
-    // Padding matches Maccy's Popup.horizontalPadding
-    private static let horizontalPadding: CGFloat = 5
-    private static let cornerRadius: CGFloat = 6
+    private static let horizontalPadding: CGFloat = 6
+    private static let cornerRadius: CGFloat = 8
     
+    // Shared UI
     private let contentBackground = NSView()
+    private let pinButton = NSButton()
+    private let metadataLabel = NSTextField(labelWithString: "")
+    
+    // Text-specific UI
     private let previewLabel = NSTextField(labelWithString: "")
+    
+    // Image preview
     private let previewImageView = NSImageView()
-    private let pinIcon = NSImageView()
     
     private var trackingArea: NSTrackingArea?
     private var isHovered = false
     private var currentItem: ClipboardItem?
+    
+    // Callback for pin action
+    var onPinToggle: ((ClipboardItem) -> Void)?
     
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -36,56 +44,73 @@ class HistoryCell: NSTableCellView {
         contentBackground.alphaValue = 0
         addSubview(contentBackground)
         
-        // Pin indicator (small, left side)
-        pinIcon.translatesAutoresizingMaskIntoConstraints = false
-        pinIcon.image = NSImage(systemSymbolName: "pin.fill", accessibilityDescription: "Pinned")
-        pinIcon.contentTintColor = .systemOrange
-        pinIcon.imageScaling = .scaleProportionallyDown
-        pinIcon.isHidden = true
-        addSubview(pinIcon)
+        // Pin button - subtle glass style, only appears on hover
+        pinButton.translatesAutoresizingMaskIntoConstraints = false
+        pinButton.bezelStyle = .accessoryBarAction
+        pinButton.isBordered = false
+        pinButton.image = NSImage(systemSymbolName: "pin", accessibilityDescription: "Pin")
+        pinButton.contentTintColor = .secondaryLabelColor
+        pinButton.imageScaling = .scaleProportionallyDown
+        pinButton.target = self
+        pinButton.action = #selector(pinButtonClicked)
+        pinButton.alphaValue = 0
+        addSubview(pinButton)
         
-        // Main text preview - the hero
+        // Main text preview - multiline for rich content
         previewLabel.translatesAutoresizingMaskIntoConstraints = false
         previewLabel.lineBreakMode = .byTruncatingTail
-        previewLabel.maximumNumberOfLines = 1
+        previewLabel.maximumNumberOfLines = 3
         previewLabel.font = NSFont.systemFont(ofSize: 13, weight: .regular)
         previewLabel.textColor = .labelColor
         previewLabel.cell?.truncatesLastVisibleLine = true
         previewLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        previewLabel.setContentHuggingPriority(.defaultLow, for: .vertical)
         addSubview(previewLabel)
         
-        // Image preview
+        // Metadata label - character count / image size + timestamp
+        metadataLabel.translatesAutoresizingMaskIntoConstraints = false
+        metadataLabel.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+        metadataLabel.textColor = .tertiaryLabelColor
+        metadataLabel.lineBreakMode = .byTruncatingTail
+        addSubview(metadataLabel)
+        
+
+        // Image preview - clean, no border
         previewImageView.translatesAutoresizingMaskIntoConstraints = false
         previewImageView.imageScaling = .scaleProportionallyUpOrDown
         previewImageView.wantsLayer = true
-        previewImageView.layer?.cornerRadius = 4
+        previewImageView.layer?.cornerRadius = 6
         previewImageView.layer?.cornerCurve = .continuous
         previewImageView.layer?.masksToBounds = true
         addSubview(previewImageView)
         
         NSLayoutConstraint.activate([
             // Background fills cell with padding
-            contentBackground.topAnchor.constraint(equalTo: topAnchor, constant: 1),
-            contentBackground.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -1),
+            contentBackground.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+            contentBackground.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2),
             contentBackground.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.horizontalPadding),
             contentBackground.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.horizontalPadding),
             
-            // Pin icon
-            pinIcon.leadingAnchor.constraint(equalTo: contentBackground.leadingAnchor, constant: 8),
-            pinIcon.centerYAnchor.constraint(equalTo: centerYAnchor),
-            pinIcon.widthAnchor.constraint(equalToConstant: 12),
-            pinIcon.heightAnchor.constraint(equalToConstant: 12),
+            // Pin button - top right corner
+            pinButton.topAnchor.constraint(equalTo: contentBackground.topAnchor, constant: 8),
+            pinButton.trailingAnchor.constraint(equalTo: contentBackground.trailingAnchor, constant: -8),
+            pinButton.widthAnchor.constraint(equalToConstant: 24),
+            pinButton.heightAnchor.constraint(equalToConstant: 24),
             
-            // Text preview
-            previewLabel.leadingAnchor.constraint(equalTo: contentBackground.leadingAnchor, constant: 10),
-            previewLabel.trailingAnchor.constraint(equalTo: contentBackground.trailingAnchor, constant: -10),
-            previewLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            // Text preview - top area, always starts at leading edge
+            previewLabel.topAnchor.constraint(equalTo: contentBackground.topAnchor, constant: 10),
+            previewLabel.leadingAnchor.constraint(equalTo: contentBackground.leadingAnchor, constant: 12),
+            previewLabel.trailingAnchor.constraint(equalTo: pinButton.leadingAnchor, constant: -4),
             
-            // Image preview (same position as text)
-            previewImageView.leadingAnchor.constraint(equalTo: contentBackground.leadingAnchor, constant: 10),
-            previewImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            previewImageView.heightAnchor.constraint(lessThanOrEqualToConstant: 60),
+            // Metadata - bottom right, always visible
+            metadataLabel.bottomAnchor.constraint(equalTo: contentBackground.bottomAnchor, constant: -8),
+            metadataLabel.trailingAnchor.constraint(equalTo: contentBackground.trailingAnchor, constant: -12),
+            
+            // Image view - smaller size to leave room for metadata
+            previewImageView.topAnchor.constraint(equalTo: contentBackground.topAnchor, constant: 8),
+            previewImageView.leadingAnchor.constraint(equalTo: contentBackground.leadingAnchor, constant: 12),
             previewImageView.widthAnchor.constraint(lessThanOrEqualToConstant: 100),
+            previewImageView.heightAnchor.constraint(lessThanOrEqualToConstant: 48),
         ])
     }
     
@@ -118,6 +143,13 @@ class HistoryCell: NSTableCellView {
         }
     }
     
+    // MARK: - Pin Action
+    
+    @objc private func pinButtonClicked() {
+        guard let item = currentItem else { return }
+        onPinToggle?(item)
+    }
+    
     // MARK: - Selection state
     
     override var backgroundStyle: NSView.BackgroundStyle {
@@ -128,21 +160,32 @@ class HistoryCell: NSTableCellView {
     
     private func updateAppearance(animated: Bool) {
         let isSelected = backgroundStyle == .emphasized
+        let isPinned = currentItem?.isPinned ?? false
         
         let updateBlock = {
+            // Pin button - only show on hover, subtle glass style
+            if self.isHovered || isSelected {
+                self.pinButton.alphaValue = 1.0
+                self.pinButton.image = NSImage(systemSymbolName: isPinned ? "pin.slash" : "pin", accessibilityDescription: isPinned ? "Unpin" : "Pin")
+                self.pinButton.contentTintColor = isSelected ? NSColor.white.withAlphaComponent(0.8) : .secondaryLabelColor
+            } else {
+                self.pinButton.alphaValue = 0
+            }
+            
             if isSelected {
-                // Maccy-style: accent color at 0.8 opacity
-                self.contentBackground.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.8).cgColor
+                self.contentBackground.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.85).cgColor
                 self.contentBackground.alphaValue = 1.0
                 self.previewLabel.textColor = .white
+                self.metadataLabel.textColor = NSColor.white.withAlphaComponent(0.7)
             } else if self.isHovered {
-                // Subtle hover - very slight background
                 self.contentBackground.layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.06).cgColor
                 self.contentBackground.alphaValue = 1.0
                 self.previewLabel.textColor = .labelColor
+                self.metadataLabel.textColor = .tertiaryLabelColor
             } else {
                 self.contentBackground.alphaValue = 0
                 self.previewLabel.textColor = .labelColor
+                self.metadataLabel.textColor = .tertiaryLabelColor
             }
         }
         
@@ -164,43 +207,139 @@ class HistoryCell: NSTableCellView {
         isHovered = false
         contentBackground.alphaValue = 0
         
-        // Pin state
-        pinIcon.isHidden = !item.isPinned
+        // Format relative date
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        let timeAgo = formatter.localizedString(for: item.date, relativeTo: Date())
         
         switch item.type {
         case .text:
             previewImageView.isHidden = true
             previewLabel.isHidden = false
             
-            // Clean up text - collapse whitespace, single line
-            var text = (item.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            text = text.components(separatedBy: .newlines).joined(separator: " ")
-            text = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            let text = item.text ?? ""
             
-            previewLabel.stringValue = text
+            // Clean up text for preview - preserve some newlines for context
+            var preview = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            // Replace multiple newlines with single, collapse excessive whitespace
+            preview = preview.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+            preview = preview.replacingOccurrences(of: "[ \t]+", with: " ", options: .regularExpression)
+            
+            previewLabel.stringValue = preview
+            
+            // Metadata: character count + time
+            let charCount = text.count
+            let charDisplay = charCount >= 1000 ? "\(charCount / 1000)k" : "\(charCount)"
+            metadataLabel.stringValue = "\(charDisplay) chars · \(timeAgo)"
             
         case .image:
             previewImageView.isHidden = false
-            previewLabel.isHidden = false
+            previewLabel.isHidden = true
             previewImageView.image = item.image
             
-            // Show dimensions as text
+            // Metadata: image dimensions + file size + time
             if let img = item.image {
                 let size = img.size
-                previewLabel.stringValue = "Image (\(Int(size.width))×\(Int(size.height)))"
+                var metaParts = ["\(Int(size.width))×\(Int(size.height))px"]
+                
+                // Calculate file size from image data
+                if let tiffData = img.tiffRepresentation,
+                   let bitmapRep = NSBitmapImageRep(data: tiffData),
+                   let pngData = bitmapRep.representation(using: .png, properties: [:]) {
+                    let bytes = pngData.count
+                    if bytes >= 1_000_000 {
+                        metaParts.append(String(format: "%.1fMB", Double(bytes) / 1_000_000))
+                    } else if bytes >= 1000 {
+                        metaParts.append("\(bytes / 1000)KB")
+                    } else {
+                        metaParts.append("\(bytes)B")
+                    }
+                }
+                
+                metaParts.append(timeAgo)
+                metadataLabel.stringValue = metaParts.joined(separator: " · ")
             } else {
-                previewLabel.stringValue = "Image"
+                metadataLabel.stringValue = "Image · \(timeAgo)"
             }
         }
+        
+        // Ensure metadata is always visible
+        metadataLabel.isHidden = false
     }
     
     override func prepareForReuse() {
         super.prepareForReuse()
         previewImageView.image = nil
+        previewImageView.isHidden = true
         previewLabel.stringValue = ""
-        pinIcon.isHidden = true
+        metadataLabel.stringValue = ""
+        pinButton.alphaValue = 0
+        previewLabel.isHidden = false
         isHovered = false
         contentBackground.alphaValue = 0
         currentItem = nil
+        onPinToggle = nil
+    }
+}
+
+// MARK: - Section Header Cell
+
+class SectionHeaderCell: NSTableCellView {
+    static let identifier = NSUserInterfaceItemIdentifier("SectionHeaderCell")
+    
+    private let titleLabel = NSTextField(labelWithString: "")
+    
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+        titleLabel.textColor = .secondaryLabelColor
+        addSubview(titleLabel)
+        
+        NSLayoutConstraint.activate([
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
+            titleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4)
+        ])
+    }
+    
+    func configure(title: String) {
+        titleLabel.stringValue = title.uppercased()
+    }
+}
+
+// MARK: - Section Divider Cell
+
+class SectionDividerCell: NSTableCellView {
+    static let identifier = NSUserInterfaceItemIdentifier("SectionDividerCell")
+    
+    private let dividerLine = NSBox()
+    
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        dividerLine.translatesAutoresizingMaskIntoConstraints = false
+        dividerLine.boxType = .separator
+        addSubview(dividerLine)
+        
+        NSLayoutConstraint.activate([
+            dividerLine.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
+            dividerLine.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
+            dividerLine.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
     }
 }

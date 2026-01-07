@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:glassboard}",
+            "name": "Debug Glassboard",
+            "target": "Glassboard",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug Glassboard"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:glassboard}",
+            "name": "Release Glassboard",
+            "target": "Glassboard",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release Glassboard"
+        }
+    ]
+}

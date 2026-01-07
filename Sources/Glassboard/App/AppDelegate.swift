@@ -5,6 +5,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var statusItem: NSStatusItem!
     var panel: FloatingPanel!
     var panelController: HistoryViewController!
+    var aboutWindowController: NSWindowController?
     
     // Wider panel for comfortable text reading
     private let panelWidth: CGFloat = 460
@@ -91,10 +92,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
-        // Monetization / Support
-        let supportItem = NSMenuItem(title: "Buy me a Coffee ☕️", action: #selector(openSupportPage), keyEquivalent: "")
-        supportItem.target = self
-        menu.addItem(supportItem)
+        // About
+        let aboutItem = NSMenuItem(title: "About Glassboard", action: #selector(showAbout), keyEquivalent: "")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
         
         menu.addItem(NSMenuItem.separator())
         
@@ -144,10 +145,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSApp.terminate(nil)
     }
     
-    @objc func openSupportPage() {
-        if let url = URL(string: "https://ko-fi.com/lukedust") {
-            NSWorkspace.shared.open(url)
+    @objc func showAbout() {
+        if aboutWindowController == nil {
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 320, height: 280),
+                styleMask: [.titled, .closable],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = "About"
+            window.center()
+            window.contentViewController = AboutViewController()
+            window.isReleasedWhenClosed = false
+            
+            aboutWindowController = NSWindowController(window: window)
         }
+        
+        // Bring app to front so window is visible
+        NSApp.activate(ignoringOtherApps: true)
+        aboutWindowController?.showWindow(self)
+        aboutWindowController?.window?.makeKeyAndOrderFront(nil)
     }
     
     private func setupPanel() {

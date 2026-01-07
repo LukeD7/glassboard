@@ -66,6 +66,8 @@ app: build
 	@echo '    <string>Glassboard needs to control other applications to paste content directly for you.</string>' >> $(INFO_PLIST)
 	@echo '</dict>' >> $(INFO_PLIST)
 	@echo '</plist>' >> $(INFO_PLIST)
+	@echo "Ad-hoc signing..."
+	codesign --force --deep --sign - $(APP_BUNDLE)
 	@echo "Glassboard.app is ready."
 
 sign: app
@@ -93,7 +95,11 @@ notarize: package
 release: notarize
 
 install: app
+	@echo "Resetting TCC permission to avoid stale entries..."
+	@tccutil reset Accessibility com.glassboard.app || true
 	@echo "Installing to /Applications..."
+	@pkill -f Glassboard || true
+	@rm -rf /Applications/$(APP_BUNDLE)
 	@cp -R $(APP_BUNDLE) /Applications/
 	@echo "Installation complete."
 

@@ -340,8 +340,11 @@ class HistoryViewController: NSViewController {
         
         if let panel = view.window as? FloatingPanel {
             panel.hideWithAnimation {
+                // Force app deactivation to ensure previous app gets focus
+                NSApp.hide(nil)
+                
                 // Give time for the previous app to regain focus
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
                     self?.synthesizePaste()
                 }
             }
@@ -349,13 +352,20 @@ class HistoryViewController: NSViewController {
     }
     
     private func synthesizePaste() {
-        let source = CGEventSource(stateID: .hidSystemState)
-        let kVK_ANSI_V = 0x09
+        // Check for accessibility permissions quietly just before the action
+        if !AXIsProcessTrusted() {
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+            AXIsProcessTrustedWithOptions(options as CFDictionary)
+            return
+        }
+
+        let source = CGEventSource(stateID: .combinedSessionState)
+        let kVK_ANSI_V: CGKeyCode = 0x09
         
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true)
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: kVK_ANSI_V, keyDown: true)
         keyDown?.flags = .maskCommand
         
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false)
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: kVK_ANSI_V, keyDown: false)
         keyUp?.flags = .maskCommand
         
         keyDown?.post(tap: .cghidEventTap)

@@ -3,8 +3,8 @@ import AppKit
 class HistoryCell: NSTableCellView {
     static let identifier = NSUserInterfaceItemIdentifier("HistoryCell")
     
-    private static let horizontalPadding: CGFloat = 6
-    private static let cornerRadius: CGFloat = 8
+    private static let horizontalPadding: CGFloat = 10
+    private static let cornerRadius: CGFloat = 12
     
     // Shared UI
     private let contentBackground = NSView()
@@ -86,29 +86,29 @@ class HistoryCell: NSTableCellView {
         
         NSLayoutConstraint.activate([
             // Background fills cell with padding
-            contentBackground.topAnchor.constraint(equalTo: topAnchor, constant: 2),
-            contentBackground.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2),
+            contentBackground.topAnchor.constraint(equalTo: topAnchor, constant: 4),
+            contentBackground.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4),
             contentBackground.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.horizontalPadding),
             contentBackground.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.horizontalPadding),
             
             // Pin button - top right corner
-            pinButton.topAnchor.constraint(equalTo: contentBackground.topAnchor, constant: 8),
-            pinButton.trailingAnchor.constraint(equalTo: contentBackground.trailingAnchor, constant: -8),
+            pinButton.topAnchor.constraint(equalTo: contentBackground.topAnchor, constant: 10),
+            pinButton.trailingAnchor.constraint(equalTo: contentBackground.trailingAnchor, constant: -10),
             pinButton.widthAnchor.constraint(equalToConstant: 24),
             pinButton.heightAnchor.constraint(equalToConstant: 24),
             
             // Text preview - top area, always starts at leading edge
-            previewLabel.topAnchor.constraint(equalTo: contentBackground.topAnchor, constant: 10),
-            previewLabel.leadingAnchor.constraint(equalTo: contentBackground.leadingAnchor, constant: 12),
-            previewLabel.trailingAnchor.constraint(equalTo: pinButton.leadingAnchor, constant: -4),
+            previewLabel.topAnchor.constraint(equalTo: contentBackground.topAnchor, constant: 12),
+            previewLabel.leadingAnchor.constraint(equalTo: contentBackground.leadingAnchor, constant: 14),
+            previewLabel.trailingAnchor.constraint(equalTo: pinButton.leadingAnchor, constant: -8),
             
             // Metadata - bottom right, always visible
-            metadataLabel.bottomAnchor.constraint(equalTo: contentBackground.bottomAnchor, constant: -8),
-            metadataLabel.trailingAnchor.constraint(equalTo: contentBackground.trailingAnchor, constant: -12),
+            metadataLabel.bottomAnchor.constraint(equalTo: contentBackground.bottomAnchor, constant: -10),
+            metadataLabel.trailingAnchor.constraint(equalTo: contentBackground.trailingAnchor, constant: -14),
             
             // Image view - smaller size to leave room for metadata
-            previewImageView.topAnchor.constraint(equalTo: contentBackground.topAnchor, constant: 8),
-            previewImageView.leadingAnchor.constraint(equalTo: contentBackground.leadingAnchor, constant: 12),
+            previewImageView.topAnchor.constraint(equalTo: contentBackground.topAnchor, constant: 10),
+            previewImageView.leadingAnchor.constraint(equalTo: contentBackground.leadingAnchor, constant: 14),
             previewImageView.widthAnchor.constraint(lessThanOrEqualToConstant: 100),
             previewImageView.heightAnchor.constraint(lessThanOrEqualToConstant: 48),
         ])
@@ -305,7 +305,7 @@ class SectionHeaderCell: NSTableCellView {
         addSubview(titleLabel)
         
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 24),
             titleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4)
         ])
     }
@@ -337,8 +337,8 @@ class SectionDividerCell: NSTableCellView {
         addSubview(dividerLine)
         
         NSLayoutConstraint.activate([
-            dividerLine.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
-            dividerLine.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
+            dividerLine.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 24),
+            dividerLine.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -24),
             dividerLine.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }

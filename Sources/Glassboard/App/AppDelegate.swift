@@ -7,7 +7,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var panelController: HistoryViewController!
     
     // Wider panel for comfortable text reading
-    private let panelWidth: CGFloat = 440
+    private let panelWidth: CGFloat = 460
     private let panelHeight: CGFloat = 520
     
     func applicationDidFinishLaunching(_ notification: Notification) {

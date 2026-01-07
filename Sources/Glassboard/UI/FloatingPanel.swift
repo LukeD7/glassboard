@@ -26,11 +26,25 @@ class FloatingPanel: NSPanel {
         self.titleVisibility = .hidden
         self.titlebarAppearsTransparent = true
         
-        // Round corners on the content view
-        self.contentView?.wantsLayer = true
-        self.contentView?.layer?.cornerRadius = 12
-        self.contentView?.layer?.masksToBounds = true
-        self.contentView?.layer?.cornerCurve = .continuous
+        setupContentView()
+    }
+    
+    override var contentViewController: NSViewController? {
+        didSet {
+            setupContentView()
+        }
+    }
+    
+    private func setupContentView() {
+        guard let view = self.contentView else { return }
+        view.wantsLayer = true
+        view.layer?.cornerRadius = 24
+        view.layer?.cornerCurve = .continuous
+        view.layer?.masksToBounds = true
+        
+        // Border for liquid glass effect
+        view.layer?.borderWidth = 1.0
+        view.layer?.borderColor = NSColor.white.withAlphaComponent(0.2).cgColor
     }
     
     override var canBecomeKey: Bool { true }

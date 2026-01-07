@@ -126,7 +126,7 @@ class HistoryViewController: NSViewController {
         tableView.doubleAction = #selector(onTableDoubleClick)
         tableView.target = self
         tableView.intercellSpacing = NSSize(width: 0, height: 2)
-        tableView.rowHeight = 72
+        tableView.rowHeight = 80
         tableView.usesAlternatingRowBackgroundColors = false
         
         // Right-click menu
@@ -151,7 +151,7 @@ class HistoryViewController: NSViewController {
         scrollView.borderType = .noBorder
         scrollView.scrollerStyle = .overlay
         scrollView.automaticallyAdjustsContentInsets = false
-        scrollView.contentInsets = NSEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)
+        scrollView.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         view.addSubview(scrollView)
         
         // ═══════════════════════════════════════════════════════════════
@@ -185,27 +185,27 @@ class HistoryViewController: NSViewController {
         
         NSLayoutConstraint.activate([
             // Search Icon
-            searchIcon.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
-            searchIcon.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            searchIcon.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+            searchIcon.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             searchIcon.widthAnchor.constraint(equalToConstant: 20),
             searchIcon.heightAnchor.constraint(equalToConstant: 20),
             
             // Search Field
             searchField.centerYAnchor.constraint(equalTo: searchIcon.centerYAnchor),
             searchField.leadingAnchor.constraint(equalTo: searchIcon.trailingAnchor, constant: 8),
-            searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             searchField.heightAnchor.constraint(equalToConstant: 28),
             
             // Divider
-            divider.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 12),
-            divider.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            divider.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+            divider.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 16),
+            divider.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            divider.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
             // Scroll View
-            scrollView.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 6),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -6),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -6),
+            scrollView.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 8),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -8),
             
             // Empty State
             emptyStateContainer.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
@@ -490,7 +490,7 @@ extension HistoryViewController: NSTableViewDataSource, NSTableViewDelegate {
         case .divider:
             return 16
         case .item(let item):
-            return item.type == .image ? 80 : 72
+            return item.type == .image ? 92 : 80
         }
     }
     

@@ -112,19 +112,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     // MARK: - Screen Grab Actions
     
     @objc func triggerScreenGrab() {
-        ScreenGrabManager.shared.captureWithLastMode()
+        ScreenGrabManager.shared.startSession()
     }
     
     @objc func captureSelection() {
-        ScreenGrabManager.shared.captureSelection()
+        ScreenGrabManager.shared.lastUsedMode = .selection
+        ScreenGrabManager.shared.startSession()
     }
     
     @objc func captureWindow() {
-        ScreenGrabManager.shared.captureWindow()
+        ScreenGrabManager.shared.lastUsedMode = .window
+        ScreenGrabManager.shared.startSession()
     }
     
     @objc func captureFullScreen() {
-        ScreenGrabManager.shared.captureFullScreen()
+        ScreenGrabManager.shared.lastUsedMode = .fullscreen
+        ScreenGrabManager.shared.startSession()
     }
     
     @objc func clearHistoryWithConfirmation() {

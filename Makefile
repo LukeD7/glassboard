@@ -64,10 +64,14 @@ app: build
 	@echo '    <true/>' >> $(INFO_PLIST)
 	@echo '    <key>NSAppleEventsUsageDescription</key>' >> $(INFO_PLIST)
 	@echo '    <string>Glassboard needs to control other applications to paste content directly for you.</string>' >> $(INFO_PLIST)
+	@echo '    <key>NSScreenCaptureUsageDescription</key>' >> $(INFO_PLIST)
+	@echo '    <string>Glassboard needs access to screen recording to capture screenshots.</string>' >> $(INFO_PLIST)
+	@echo '    <key>NSAccessibilityUsageDescription</key>' >> $(INFO_PLIST)
+	@echo '    <string>Glassboard uses accessibility features to detect shortcuts and window focus.</string>' >> $(INFO_PLIST)
 	@echo '</dict>' >> $(INFO_PLIST)
 	@echo '</plist>' >> $(INFO_PLIST)
-	@echo "Ad-hoc signing..."
-	codesign --force --deep --sign - $(APP_BUNDLE)
+	@echo "Ad-hoc signing with entitlements..."
+	codesign --force --deep --sign - --entitlements $(ENTITLEMENTS) $(APP_BUNDLE)
 	@echo "Glassboard.app is ready."
 
 sign: app
@@ -95,12 +99,10 @@ notarize: package
 release: notarize
 
 install: app
-	@echo "Resetting TCC permission to avoid stale entries..."
-	@tccutil reset Accessibility com.glassboard.app || true
 	@echo "Installing to /Applications..."
 	@pkill -f Glassboard || true
-	@rm -rf /Applications/$(APP_BUNDLE)
-	@cp -R $(APP_BUNDLE) /Applications/
+	@mkdir -p /Applications/$(APP_BUNDLE)
+	@rsync -a --delete $(APP_BUNDLE)/ /Applications/$(APP_BUNDLE)/
 	@echo "Installation complete."
 
 clean:

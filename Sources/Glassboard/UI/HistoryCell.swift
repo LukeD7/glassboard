@@ -17,8 +17,6 @@ class HistoryCell: NSTableCellView {
     // Image preview
     private let previewImageView = NSImageView()
     
-    private var trackingArea: NSTrackingArea?
-    private var isHovered = false
     private var currentItem: ClipboardItem?
     
     // Callback for pin action
@@ -114,35 +112,6 @@ class HistoryCell: NSTableCellView {
         ])
     }
     
-    // MARK: - Hover tracking
-    
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        if let existing = trackingArea {
-            removeTrackingArea(existing)
-        }
-        trackingArea = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .activeInKeyWindow],
-            owner: self,
-            userInfo: nil
-        )
-        addTrackingArea(trackingArea!)
-    }
-    
-    override func mouseEntered(with event: NSEvent) {
-        guard backgroundStyle != .emphasized else { return }
-        isHovered = true
-        updateAppearance(animated: true)
-    }
-    
-    override func mouseExited(with event: NSEvent) {
-        isHovered = false
-        if backgroundStyle != .emphasized {
-            updateAppearance(animated: true)
-        }
-    }
-    
     // MARK: - Pin Action
     
     @objc private func pinButtonClicked() {
@@ -163,11 +132,11 @@ class HistoryCell: NSTableCellView {
         let isPinned = currentItem?.isPinned ?? false
         
         let updateBlock = {
-            // Pin button - only show on hover, subtle glass style
-            if self.isHovered || isSelected {
+            // Pin button - only show when selected
+            if isSelected {
                 self.pinButton.alphaValue = 1.0
                 self.pinButton.image = NSImage(systemSymbolName: isPinned ? "pin.slash" : "pin", accessibilityDescription: isPinned ? "Unpin" : "Pin")
-                self.pinButton.contentTintColor = isSelected ? NSColor.white.withAlphaComponent(0.8) : .secondaryLabelColor
+                self.pinButton.contentTintColor = NSColor.white.withAlphaComponent(0.8)
             } else {
                 self.pinButton.alphaValue = 0
             }
@@ -177,11 +146,6 @@ class HistoryCell: NSTableCellView {
                 self.contentBackground.alphaValue = 1.0
                 self.previewLabel.textColor = .white
                 self.metadataLabel.textColor = NSColor.white.withAlphaComponent(0.7)
-            } else if self.isHovered {
-                self.contentBackground.layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.06).cgColor
-                self.contentBackground.alphaValue = 1.0
-                self.previewLabel.textColor = .labelColor
-                self.metadataLabel.textColor = .tertiaryLabelColor
             } else {
                 self.contentBackground.alphaValue = 0
                 self.previewLabel.textColor = .labelColor
@@ -204,7 +168,6 @@ class HistoryCell: NSTableCellView {
     
     func configure(with item: ClipboardItem) {
         currentItem = item
-        isHovered = false
         contentBackground.alphaValue = 0
         
         // Format relative date
@@ -275,7 +238,6 @@ class HistoryCell: NSTableCellView {
         metadataLabel.stringValue = ""
         pinButton.alphaValue = 0
         previewLabel.isHidden = false
-        isHovered = false
         contentBackground.alphaValue = 0
         currentItem = nil
         onPinToggle = nil

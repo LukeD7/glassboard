@@ -50,7 +50,7 @@ It is not trying to reinvent the wheel. It is just a better, lower-friction way 
 The easiest way to install and keep Glassboard updated.
 
 ```bash
-brew tap luked7/tap
+brew tap luked7/glassboard
 brew install --cask glassboard
 ```
 

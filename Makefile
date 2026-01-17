@@ -85,6 +85,12 @@ package: sign
 	/usr/bin/ditto -c -k --keepParent $(APP_BUNDLE) $(ZIP_NAME)
 	@echo "Package ready: $(ZIP_NAME)"
 
+# Create a zip without signing (for quick sharing/testing)
+dist: app
+	@echo "Packaging (Ad-hoc) $(APP_BUNDLE) into $(ZIP_NAME)..."
+	/usr/bin/ditto -c -k --keepParent $(APP_BUNDLE) $(ZIP_NAME)
+	@echo "Distribution package ready: $(ZIP_NAME)"
+
 # Notarize the package (Requires apple ID and dev program)
 # Usage: make notarize SIGNING_ID="Dev ID"
 notarize: package

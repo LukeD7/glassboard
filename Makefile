@@ -53,7 +53,7 @@ app: build
 	@echo '    <key>CFBundleName</key>' >> $(INFO_PLIST)
 	@echo '    <string>$(APP_NAME)</string>' >> $(INFO_PLIST)
 	@echo '    <key>CFBundleShortVersionString</key>' >> $(INFO_PLIST)
-	@echo '    <string>1.0</string>' >> $(INFO_PLIST)
+	@echo '    <string>0.1.0</string>' >> $(INFO_PLIST)
 	@echo '    <key>CFBundleVersion</key>' >> $(INFO_PLIST)
 	@echo '    <string>1</string>' >> $(INFO_PLIST)
 	@echo '    <key>LSUIElement</key>' >> $(INFO_PLIST)
